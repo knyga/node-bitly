@@ -1,5 +1,11 @@
 import { doRequest, sortUrlsAndHash } from './lib';
-import { BitlyConfig, BitlyResponse, BitlyError, BitlyUrlQueryParams, BitlyResponseData } from './bitly.types';
+import {
+  BitlyConfig,
+  BitlyLink,
+  BitlyErrorResponse,
+  BitlyUrlQueryParams,
+  BitlyResponse
+} from './types';
 
 /**
  *
@@ -27,13 +33,15 @@ import { BitlyConfig, BitlyResponse, BitlyError, BitlyUrlQueryParams, BitlyRespo
  *  }
  */
 export class BitlyClient {
-  constructor(private accessToken: string, private config: BitlyConfig = {}) {}
+  constructor(private accessToken: string, private config: BitlyConfig = {}) {
+  }
+
   /**
    * This is used to return the page title for a given Bitlink.
    * @param  {array<string>} items An array of short urls or hashes
    * @return {object} The results of the request
    */
-  async info(items: string | string[]): Promise<BitlyResponseData> {
+  async info(items: string | string[]): Promise<BitlyResponse> {
     return await this.bitlyRequest('info', sortUrlsAndHash(items));
   }
 
@@ -42,8 +50,8 @@ export class BitlyClient {
    * @param  {string} longUrl The URL to be shortened
    * @return {object} The results of the request
    */
-  async shorten(longUrl: string): Promise<BitlyResponseData> {
-    return await this.bitlyRequest('shorten', { longUrl });
+  async shorten(longUrl: string): Promise<BitlyResponse> {
+    return await this.bitlyRequest('bitlinks', { long_url: longUrl });
   }
 
   /**
@@ -51,8 +59,8 @@ export class BitlyClient {
    * @param  {string|array<string>} items A string or array of strings of short urls and hashes.
    * @return {object} The results of the request
    */
-  async expand(items: string | string[]): Promise<BitlyResponseData> {
-    return await this.bitlyRequest('expand', sortUrlsAndHash(items));
+  async expand(bitLink: string): Promise<BitlyResponse> {
+    return await this.bitlyRequest('expand', { bitlink_id: `bit.ly/${bitLink}` });
   }
 
   /**
@@ -60,7 +68,7 @@ export class BitlyClient {
    * @param  {string|array<string>} items A string or array of strings of short urls and hashes.
    * @return {object}
    */
-  async clicks(items: string | string[]): Promise<BitlyResponseData> {
+  async clicks(items: string | string[]): Promise<BitlyResponse> {
     return await this.bitlyRequest('clicks', sortUrlsAndHash(items));
   }
 
@@ -69,7 +77,7 @@ export class BitlyClient {
    * @param  {string|array<string>} items A string or array of strings of short urls and hashes.
    * @return {object}
    */
-  async clicksByMinute(items: string | string[]): Promise<BitlyResponseData> {
+  async clicksByMinute(items: string | string[]): Promise<BitlyResponse> {
     return await this.bitlyRequest('clicks_by_minute', sortUrlsAndHash(items));
   }
 
@@ -78,7 +86,7 @@ export class BitlyClient {
    * @param  {string|array<string>} items A string or array of strings of short urls and hashes.
    * @return {object}
    */
-  async clicksByDay(items: string | string[]): Promise<BitlyResponseData> {
+  async clicksByDay(items: string | string[]): Promise<BitlyResponse> {
     return await this.bitlyRequest('clicks_by_day', sortUrlsAndHash(items));
   }
 
@@ -87,7 +95,7 @@ export class BitlyClient {
    * @param  {string} url The url to look up
    * @return {object}
    */
-  async lookup(url: string): Promise<BitlyResponseData> {
+  async lookup(url: string): Promise<BitlyResponse> {
     return await this.bitlyRequest('lookup', { url });
   }
 
@@ -96,7 +104,7 @@ export class BitlyClient {
    * @param  {string} uri The uri to look up
    * @return {object}
    */
-  async referrers(item: string): Promise<BitlyResponseData> {
+  async referrers(item: string): Promise<BitlyResponse> {
     return await this.bitlyRequest('referrers', sortUrlsAndHash([item]));
   }
 
@@ -105,7 +113,7 @@ export class BitlyClient {
    * @param  {string} uri The uri to look up
    * @return {object}
    */
-  async countries(item: string): Promise<BitlyResponseData> {
+  async countries(item: string): Promise<BitlyResponse> {
     return await this.bitlyRequest('countries', sortUrlsAndHash([item]));
   }
 
@@ -115,20 +123,14 @@ export class BitlyClient {
    * @param {object} data The data object to be passed. Keys should be query paramaters
    * @return {object} The bitly request return data
    */
-  async bitlyRequest(method: string, data: BitlyUrlQueryParams | object): Promise<BitlyResponseData> {
+  async bitlyRequest(method: string, data: BitlyUrlQueryParams | object): Promise<BitlyResponse> {
     try {
-      const result: BitlyResponse = await doRequest(this.accessToken, method, data, this.config);
-
-      if (result.status_code >= 200 && result.status_code < 400) {
-        return result.data;
-      }
-
-      const err: BitlyError = <BitlyError>(
-        new Error(`[node-bitly] Request returned ${result.status_code}: ${result.status_txt}`)
+      return await doRequest(
+          this.accessToken,
+          method,
+          data,
+          this.config
       );
-      err.statusCode = result.status_code;
-      err.data = result.data;
-      throw err;
     } catch (e) {
       throw e;
     }
