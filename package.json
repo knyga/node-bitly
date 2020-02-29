@@ -75,5 +75,10 @@
     "valid-url": "^1.0.9"
   },
   "main": "dist/index.js",
-  "types": "dist/index.d.ts"
+  "types": "dist/index.d.ts",
+  "directories": {
+    "lib": "./src",
+    "doc": "./docs",
+    "test": "./test"
+  }
 }
